@@ -122,13 +122,13 @@
 
 
 <img class="wechat-title-img"
-     src="">
+     src="ors2atorf.bkt.clouddn.comhttp://ors2atorf.bkt.clouddn.com/match3.png">
 
 
 <style>
     
     header.intro-header {
-        background-image: url('')
+        background-image: url('ors2atorf.bkt.clouddn.comhttp://ors2atorf.bkt.clouddn.com/match3.png?imageView2/1/w/1400/h/400/interlace/1/q/90')
     }
 
     
@@ -170,23 +170,27 @@
         <div class="row">
             <!-- Post Container -->
             <div class="col-lg-8 col-lg-offset-1 col-sm-9 post-container">
-                <p>##实现技术的选择</p>
-<p>在自动化生产需要识别生产线上的目标以进行进一步的检测，这时就需要用到模板匹配。模板匹配是通过OpenCV里的<strong>matchTemple</strong>函数实现的。模板匹配是一项在一幅图像中寻找与另一幅模板图像最匹配(相似)部分的技术。模板匹配是通过在输入图像上滑动图像块(模板)同时比对相似度, 来对模板和输入图像进行匹配的一种方法。这种方法不仅计算量大，且若图像有旋转的话，由于旋转角度未知，需要把图像旋转一定角度取像素和原图标对比，要将360/2^n的倍数都要取到，这样计算量更大，效率更低。所以matchTemple并不适用于角度旋转和尺寸变换的场景。</p>
+                <h2 id="实现技术的选择"><a href="#实现技术的选择" class="headerlink" title="实现技术的选择"></a>实现技术的选择</h2><p>在自动化生产需要识别生产线上的目标以进行进一步的检测，这时就需要用到模板匹配。模板匹配是通过OpenCV里的<strong>matchTemple</strong>函数实现的。模板匹配是一项在一幅图像中寻找与另一幅模板图像最匹配(相似)部分的技术。模板匹配是通过在输入图像上滑动图像块(模板)同时比对相似度, 来对模板和输入图像进行匹配的一种方法。这种方法不仅计算量大，且若图像有旋转的话，由于旋转角度未知，需要把图像旋转一定角度取像素和原图标对比，要将360/2^n的倍数都要取到，这样计算量更大，效率更低。所以matchTemple并不适用于角度旋转和尺寸变换的场景。</p>
 <p>考虑到工业上目标物轮廓清晰，可以考虑使用轮廓来匹配，<strong>matchShapes</strong>函数比较轮廓相似度是基于Hu矩来计算的，而Hu矩是归一化中心矩的线性组合，如平移、缩放、旋转都影响较小。</p>
-<p>##实现细节</p>
-<p>代码如下：</p>
+<h2 id="实现细节"><a href="#实现细节" class="headerlink" title="实现细节"></a>实现细节</h2><p>代码如下：</p>
 <figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"opencv2/opencv.hpp"</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> cv;</div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></div><div class="line">&#123;</div><div class="line">    <span class="comment">//查找模版图像的轮廓</span></div><div class="line">    Mat templateImg = imread(<span class="string">"test2.jpg"</span>, CV_LOAD_IMAGE_COLOR);</div><div class="line">	Mat copyImg1 = templateImg.clone();</div><div class="line">	cvtColor(templateImg, templateImg, CV_BGR2GRAY);</div><div class="line">	threshold(templateImg, templateImg, <span class="number">100</span>, <span class="number">255</span>, CV_THRESH_BINARY);</div><div class="line">	imshow(<span class="string">"thresh1"</span>, templateImg);</div><div class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;Point&gt;&gt; contours1;</div><div class="line">	findContours(templateImg, contours1, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);<span class="comment">//最外层轮廓</span></div><div class="line">	drawContours(copyImg1, contours1, <span class="number">-1</span>, Scalar(<span class="number">0</span>, <span class="number">255</span>, <span class="number">0</span>), <span class="number">2</span>, <span class="number">8</span>);</div><div class="line">	<span class="comment">//查找待测试图像的轮廓</span></div><div class="line">	Mat testImg = imread(<span class="string">"test1.jpg"</span>, CV_LOAD_IMAGE_COLOR);</div><div class="line">	Mat copyImg2 = testImg.clone();</div><div class="line">	cvtColor(testImg, testImg, CV_BGR2GRAY);</div><div class="line">	threshold(testImg, testImg, <span class="number">100</span>, <span class="number">255</span>, CV_THRESH_BINARY);</div><div class="line">	imshow(<span class="string">"thresh2"</span>, testImg);</div><div class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;Point&gt;&gt; contours2;</div><div class="line">	findContours(testImg, contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);<span class="comment">//最外层轮廓</span></div><div class="line">																		</div><div class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; contours2.size(); i++)<span class="comment">//遍历待测试图像的轮廓</span></div><div class="line">	&#123;</div><div class="line">		<span class="comment">//返回此轮廓与模版轮廓之间的相似度,a0越小越相似</span></div><div class="line">		<span class="keyword">double</span> a0 = matchShapes(contours1[<span class="number">0</span>], contours2[i], CV_CONTOURS_MATCH_I1, <span class="number">0</span>);</div><div class="line">		<span class="built_in">cout</span> &lt;&lt; <span class="string">"模版轮廓与待测试图像轮廓"</span> &lt;&lt; i &lt;&lt; <span class="string">"的相似度:"</span> &lt;&lt; a0 &lt;&lt; <span class="built_in">endl</span>;<span class="comment">//输出两个轮廓间的相似度</span></div><div class="line">		<span class="keyword">if</span> (a0&lt;<span class="number">0.08</span>)<span class="comment">//如果此轮廓与模版轮廓的相似度小于0.08</span></div><div class="line">		&#123;</div><div class="line">			drawContours(copyImg2, contours2, i, Scalar(<span class="number">0</span>, <span class="number">255</span>, <span class="number">0</span>), <span class="number">2</span>, <span class="number">8</span>);<span class="comment">//则在待测试图像上画出此轮廓</span></div><div class="line">		&#125;</div><div class="line">		imshow(<span class="string">"copyImg2"</span>, copyImg2);</div><div class="line">		<span class="keyword">if</span> (waitKey(<span class="number">0</span>) == <span class="number">27</span>)<span class="comment">//等待按键进行下一个轮廓，ESC则退出</span></div><div class="line">		&#123;</div><div class="line">			<span class="built_in">cout</span> &lt;&lt; <span class="string">"ESC退出"</span> &lt;&lt; <span class="built_in">endl</span>;</div><div class="line">			<span class="keyword">break</span>;</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">	waitKey(<span class="number">0</span>);</div><div class="line">	<span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>##测试结果</p>
-<p>####原图像：</p>
+<h2 id="测试结果"><a href="#测试结果" class="headerlink" title="测试结果"></a>测试结果</h2><ul>
+<li>原图像：</li>
+</ul>
 <p><img src="http://ors2atorf.bkt.clouddn.com/match1.png" alt="original_image"></p>
-<p>####测试图像：</p>
+<ul>
+<li>测试图像：</li>
+</ul>
 <p><img src="http://ors2atorf.bkt.clouddn.com/match2.png" alt="test_image"></p>
-<p>####输出图像：</p>
+<ul>
+<li>输出图像：</li>
+</ul>
 <p><img src="http://ors2atorf.bkt.clouddn.com/match3.png" alt="output_image"></p>
-<p>####输出结果：</p>
+<ul>
+<li>输出结果：</li>
+</ul>
 <p><img src="http://ors2atorf.bkt.clouddn.com/match4.png" alt="output"></p>
-<p>##下一步工作</p>
-<p>1.进一步研究模板匹配的所有方法并比较</p>
+<h2 id="下一步工作"><a href="#下一步工作" class="headerlink" title="下一步工作"></a>下一步工作</h2><p>1.进一步研究模板匹配的所有方法并比较</p>
 <ul>
 <li><p>运行效率：时间</p>
 </li>
@@ -204,8 +208,7 @@
 <li><p>增加各种数据结构，比如堆栈，来加快代码的运行效率</p>
 </li>
 </ul>
-<p>##相关文档推荐</p>
-<ul>
+<h2 id="相关文档推荐"><a href="#相关文档推荐" class="headerlink" title="相关文档推荐"></a>相关文档推荐</h2><ul>
 <li><p><a href="http://yanghespace.com/2015/08/09/%E5%9F%BA%E4%BA%8ENCC%E7%9A%84%E6%A8%A1%E6%9D%BF%E5%8C%B9%E9%85%8D%E4%BB%8B%E7%BB%8D%E5%8F%8A%E5%AE%9E%E7%8E%B0%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82/" target="_blank" rel="external">基于NCC的模板匹配介绍及实现技术细节</a></p>
 </li>
 <li><p><a href="http://www.opencv.org.cn/opencvdoc/2.3.2/html/doc/tutorials/imgproc/histograms/template_matching/template_matching.html" target="_blank" rel="external">模板匹配—OpenCV官方文档</a></p>
@@ -238,7 +241,7 @@
 
             <div class="hidden-xs col-sm-3 toc-col">
                 <div class="toc-wrap">
-                    
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#实现技术的选择"><span class="toc-text">实现技术的选择</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#实现细节"><span class="toc-text">实现细节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#测试结果"><span class="toc-text">测试结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#下一步工作"><span class="toc-text">下一步工作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#相关文档推荐"><span class="toc-text">相关文档推荐</span></a></li></ol>
                 </div>
             </div>
         </div>
