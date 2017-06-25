@@ -98,7 +98,7 @@
                         
 							
                         <li>
-                            <a href="/tags/">Tags</a>
+                            <a href="/archives/">archives</a>
                         </li>
 							
 						
@@ -106,7 +106,7 @@
                         
 							
                         <li>
-                            <a href="/archives/">archives</a>
+                            <a href="/tags/">Tags</a>
                         </li>
 							
 						
@@ -298,6 +298,33 @@
 
 
 <div class="post-preview  "
+     style="background-image: url('http://ors2atorf.bkt.clouddn.com/post_header.jpg')">
+    <a href="/2017/06/25/利用包围轮廓和仿射变换进行图像倾斜校正/">
+        <h2 class="post-title">
+            利用包围轮廓和仿射变换进行图像倾斜校正
+        </h2>
+        <p class="post-meta">
+            <i class="fa fa-calendar" aria-hidden="true"></i> 2017-06-25
+        </p>
+        
+        <div class="post-content-preview">
+            <p>
+                本文所展示的是利用OpenCV来进行图像的倾斜校正，由于图像背景复杂，需要旋转的角度未知，我们大致需要完成以下几个步骤：
+
+对图像进行二值化处理，方便检测出目标的轮廓
+计算图像的矩，绘制轮廓，并利用minAreaRect()函数寻找最小面积的包围矩形
+计算旋转矩阵，并通过旋转矩阵来完成最终的倾斜..
+            </p>
+        </div>
+    </a>
+
+</div>
+
+<hr>
+
+
+
+<div class="post-preview  "
      style="background-image: url('http://ors2atorf.bkt.clouddn.com/match3.png')">
     <a href="/2017/06/20/模板匹配技术选择及实现细节/">
         <h2 class="post-title">
@@ -400,6 +427,9 @@
             <section>
                 <div class="tags">
                     
+                    
+                    <a href="/tags/#OpenCV" title="OpenCV"
+                       rel="2">OpenCV</a>
                     
                     
                 </div>

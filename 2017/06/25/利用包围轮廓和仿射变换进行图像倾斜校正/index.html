@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="蒲翔宇在 Github 上的个人博客">
+    <meta name="keyword" content="null">
+    <meta name="theme-color" content="#600090">
+    <meta name="msapplication-navbutton-color" content="#600090">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#600090">
+    <meta name="baidu-site-verification" content="Jj34ErJJQW" />
+    <meta name="google-site-verification" content="RaXpouG18FsoO5n6_p2p4cyKXtnolXMCCl6JjSx4X38" />
+
+    <link rel="shortcut icon" href="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-person-128.png">
+    <link rel="alternate" type="application/atom+xml" title="Jeff Pu" href="/atom.xml">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.css">
+    <title>
+        
+        利用包围轮廓和仿射变换进行图像倾斜校正｜JeffPu&#39;s blog
+        
+    </title>
+
+    <link rel="canonical" href="http://JeffPu.github.io/2017/06/25/利用包围轮廓和仿射变换进行图像倾斜校正/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/blog-style.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+    <!-- baidu push -->
+    <script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+</head>
+
+<style>
+
+    header.intro-header {
+        background-image: url('http://ors2atorf.bkt.clouddn.com/index.jpg')
+    }
+</style>
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="" class="animated fadeIn">
+<!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top " id="nav-top" data-ispost = "true" data-istags="false
+" data-ishome = "false" >
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand animated pulse" href="/">
+                <span class="brand-logo">
+                    Jeff Pu
+                </span>
+                's Blog
+            </a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <!-- /.navbar-collapse -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+					
+                    
+                        
+							
+                        <li>
+                            <a href="/archives/">archives</a>
+                        </li>
+							
+						
+                    
+                        
+							
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+							
+						
+                    
+					
+					
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+//    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+<!-- Main Content -->
+
+<!--only post-->
+
+
+<img class="wechat-title-img" src="http://ors2atorf.bkt.clouddn.com/post_header.jpg">
+
+
+<style>
+    
+    header.intro-header {
+        background-image: url('http://ors2atorf.bkt.clouddn.com/post_header.jpg');
+    }
+
+    
+</style>
+
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 text-center">
+                <div class="post-heading">
+                    <h1>利用包围轮廓和仿射变换进行图像倾斜校正</h1>
+                    
+                    <span class="meta">
+                         作者 Xiangyu Pu
+                        <span>
+                          日期 2017-06-25
+                         </span>
+                    </span>
+                    <div class="tags text-center">
+                        
+                        <a class="tag" href="/tags/#OpenCV"
+                           title="OpenCV">OpenCV</a>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="post-title-haojen">
+        <span>
+            利用包围轮廓和仿射变换进行图像倾斜校正
+        </span>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+            <!-- Post Container -->
+            <div class="col-lg-8 col-lg-offset-1 col-sm-9 post-container">
+                <p>本文所展示的是利用OpenCV来进行图像的倾斜校正，由于图像背景复杂，需要旋转的角度未知，我们大致需要完成以下几个步骤：</p>
+<ol>
+<li>对图像进行二值化处理，方便检测出目标的轮廓</li>
+<li>计算图像的矩，绘制轮廓，并利用minAreaRect()函数寻找最小面积的包围矩形</li>
+<li>计算旋转矩阵，并通过旋转矩阵来完成最终的倾斜校正</li>
+</ol>
+<h2 id="实现细节"><a href="#实现细节" class="headerlink" title="实现细节"></a>实现细节</h2><p>代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;opencv2/core/core.hpp&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;opencv2/imgproc/imgproc.hpp&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;opencv2/highgui/highgui.hpp&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></div><div class="line"></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> cv;</div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"></div><div class="line"><span class="comment">//空洞填充</span></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">fillHole</span><span class="params">(<span class="keyword">const</span> Mat srcBw, Mat &amp;dstBw)</span></span></div><div class="line">&#123;</div><div class="line">    Size m_Size = srcBw.size();</div><div class="line">    Mat Temp = Mat::zeros(m_Size.height + <span class="number">2</span>, m_Size.width + <span class="number">2</span>, srcBw.type());<span class="comment">//延展图像</span></div><div class="line">    srcBw.copyTo(Temp(Range(<span class="number">1</span>, m_Size.height + <span class="number">1</span>), Range(<span class="number">1</span>, m_Size.width + <span class="number">1</span>)));</div><div class="line"></div><div class="line">    cv::floodFill(Temp, Point(<span class="number">0</span>, <span class="number">0</span>), Scalar(<span class="number">255</span>));</div><div class="line"></div><div class="line">    Mat cutImg;<span class="comment">//裁剪延展的图像</span></div><div class="line">    Temp(Range(<span class="number">1</span>, m_Size.height + <span class="number">1</span>), Range(<span class="number">1</span>, m_Size.width + <span class="number">1</span>)).copyTo(cutImg);</div><div class="line"></div><div class="line">    dstBw = srcBw | (~cutImg);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></div><div class="line">&#123;</div><div class="line">    Mat src = imread(<span class="string">"rotImage.jpg"</span>);</div><div class="line">    <span class="keyword">if</span> (!src.data)</div><div class="line">    &#123;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"读取图片错误！ \n"</span>); </div><div class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</div><div class="line">    &#125;</div><div class="line">    imshow(<span class="string">"原图像"</span>, src);</div><div class="line">    Mat src1 = src.clone();</div><div class="line">    <span class="comment">//图像预处理</span></div><div class="line">    Mat dst, gray, edge;</div><div class="line">    dst.create(src1.size(), src1.type());</div><div class="line">    cvtColor(src1, gray, COLOR_BGR2GRAY);</div><div class="line">    blur(gray, edge, Size(<span class="number">3</span>, <span class="number">3</span>));</div><div class="line">    Mat bw;</div><div class="line">    cv::threshold(edge, bw, <span class="number">120</span>, <span class="number">250</span>, <span class="number">0</span>);</div><div class="line">    <span class="comment">//填充图像</span></div><div class="line">    Mat bwFill;</div><div class="line">    fillHole(bw, bwFill);</div><div class="line">    imshow(<span class="string">"二值化处理后的图像"</span>, bwFill);</div><div class="line"></div><div class="line">    <span class="comment">//找到轮廓</span></div><div class="line">    <span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;Point&gt;&gt; contours;</div><div class="line">    <span class="built_in">vector</span>&lt;Vec4i&gt; hierarchy;</div><div class="line">    findContours(bwFill, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);</div><div class="line">    <span class="comment">//计算矩</span></div><div class="line">    <span class="built_in">vector</span>&lt;Moments&gt; mu(contours.size());</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; contours.size(); i++)</div><div class="line">    &#123;</div><div class="line">    mu[i] = moments(contours[i], <span class="literal">false</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">//计算中心矩</span></div><div class="line">    <span class="built_in">vector</span>&lt;Point2f&gt; mc(contours.size());</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; contours.size(); i++)</div><div class="line">    &#123;</div><div class="line">    mc[i] = Point2f(<span class="keyword">static_cast</span>&lt;<span class="keyword">float</span>&gt;(mu[i].m10 / mu[i].m00), <span class="keyword">static_cast</span>&lt;<span class="keyword">float</span>&gt;(mu[i].m01 / mu[i].m00));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">//绘制轮廓</span></div><div class="line">    Mat drawing = Mat::zeros(bwFill.size(), CV_8UC3);</div><div class="line">    <span class="function">RNG <span class="title">g_rng</span><span class="params">(<span class="number">12345</span>)</span></span>;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> <span class="keyword">int</span> i = <span class="number">0</span>; i&lt; contours.size(); i++)</div><div class="line">    &#123;</div><div class="line">    Scalar color = Scalar(g_rng.uniform(<span class="number">0</span>, <span class="number">255</span>), g_rng.uniform(<span class="number">0</span>, <span class="number">255</span>), g_rng.uniform(<span class="number">0</span>, <span class="number">255</span>));<span class="comment">//随机生成颜色值</span></div><div class="line">    drawContours(drawing, contours, i, color, <span class="number">2</span>, <span class="number">8</span>, hierarchy, <span class="number">0</span>, Point());<span class="comment">//绘制外层和内层轮廓</span></div><div class="line">    circle(drawing, mc[i], <span class="number">4</span>, color, <span class="number">-1</span>, <span class="number">8</span>, <span class="number">0</span>);<span class="comment">//绘制圆</span></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">//绘制外框矩形</span></div><div class="line">    RotatedRect box;</div><div class="line">    Point2f vertex[<span class="number">4</span>];</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; contours.size(); i++)</div><div class="line">    &#123;</div><div class="line">        box = minAreaRect(Mat(contours[i]));<span class="comment">//寻找最小面积的包围矩形</span></div><div class="line">        box.points(vertex);</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">4</span>; i++)</div><div class="line">            line(drawing, vertex[i], vertex[(i + <span class="number">1</span>) % <span class="number">4</span>], Scalar(<span class="number">100</span>, <span class="number">200</span>, <span class="number">211</span>), <span class="number">2</span>, CV_AA);<span class="comment">//绘制出最小面积的包围矩形</span></div><div class="line">    &#125;</div><div class="line">    imshow(<span class="string">"绘制的矩形框"</span>, drawing);</div><div class="line">    <span class="built_in">cout</span> &lt;&lt;<span class="string">"需要校正的角度为："</span>&lt;&lt; box.angle;</div><div class="line"></div><div class="line">    <span class="comment">// 计算旋转矩阵</span></div><div class="line">    Mat rotMat, rotateImage;</div><div class="line">    rotMat = getRotationMatrix2D(box.center, box.angle,<span class="number">1</span>);</div><div class="line">    <span class="comment">// 旋转图像</span></div><div class="line">    warpAffine(src, rotateImage, rotMat, src.size());</div><div class="line">    <span class="comment">// 显示到窗口中</span></div><div class="line">    imshow(<span class="string">"校正后的图像"</span>, rotateImage);</div><div class="line"></div><div class="line">    waitKey(<span class="number">0</span>);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>运行结果：</p>
+<p><em>原图像</em></p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/rot1.jpg" alt="orinal_image"></p>
+<p><em>二值化处理后的图像</em></p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/rot4.jpg" alt="threshold_image"></p>
+<p><em>寻找的最小面积的包围矩形</em></p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/rot2.jpg" alt="minAreaRect_image"></p>
+<p><em>得到的需要校正的角度</em></p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/rot_angle.jpg" alt="angle_image"></p>
+<p><em>完成校正的图像</em></p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/rot3.jpg" alt="rotCorrect_image"></p>
+<h2 id="具体算法思路"><a href="#具体算法思路" class="headerlink" title="具体算法思路"></a>具体算法思路</h2><p>为了区别背景和目标物体，首先要对图像进行二值化处理，其中使用了一个空洞填充算法<strong>fillHole()</strong>，这里借鉴了冈萨雷斯书上的集合运算方法。在本例中这不是必须的，但考虑到通用性，空洞填充能更利于进一步处理，减少未知BUG。其大致思路如下：</p>
+<ol>
+<li>设原图像为A，首先A向外延展一到两个像素，并将值填充为背景色（0）,标记为B。</li>
+<li>使用floodFill函数将B的大背景填充，填充值为前景色（255），种子点为（0，0）即可（步骤一可以确保（0，0）点位于大背景），标记为C。</li>
+<li>将填充好的图像裁剪为原图像大小（去掉延展区域），标记为D。</li>
+<li>将D取反与A相加即得填充的图像，E=A|（~D）。</li>
+</ol>
+<p> 下一步是找到目标物的轮廓，这里不再赘述。</p>
+<p> 第三步是使用OpenCV中的minAreaRect()函数返回一个最小面积的包围矩形RotateRect，并绘制外框矩形。</p>
+<p> RotateRect类成员包括了angle、center等，这是下一步的关键数据。关于minAreaRect()和RotateRect类的说明可参考：</p>
+<p> <a href="https://stackoverflow.com/questions/15956124/minarearect-angles-unsure-about-the-angle-returned" target="_blank" rel="external">Stack Overflow - MinAreaRect angles</a></p>
+<p> <a href="http://blog.csdn.net/a553654745/article/details/45743063" target="_blank" rel="external">RotatedRect和CvBox2D的角度疑云</a></p>
+<p> 最后一步是使用以上数据得到旋转矩阵，并使用旋转矩阵和warpAffine()函数进行校正得到最后的图像。</p>
+<p> warpAffine()函数实际上是一种仿射变换，关于仿射变换的原理可参考：</p>
+<p> <a href="http://www.opencv.org.cn/opencvdoc/2.3.2/html/doc/tutorials/imgproc/imgtrans/warp_affine/warp_affine.html" target="_blank" rel="external">OpenCV官方文档 - 仿射变换</a></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p> 这套算法对平面倾斜的图像有较好的处理效果，若图像为透视倾斜，则需要考虑其他的解决思路，因本例暂未涉及，所以不再赘述。</p>
+
+                <hr>
+                
+
+                <ul class="pager">
+                    
+                    
+                    <li class="next">
+                        <a href="/2017/06/20/模板匹配技术选择及实现细节/" data-toggle="tooltip" data-placement="top"
+                           title="模板匹配技术选择及实现细节">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
+
+                
+
+
+                <!--加入新的评论系统-->
+                
+                <!-- 来必力City版安装代码 -->
+                <div id="lv-container" data-id="city" data-uid="MTAyMC8yOTE3NS81NzQy">
+                    <script type="text/javascript">
+                        (function(d, s) {
+                            var j, e = d.getElementsByTagName(s)[0];
+
+                            if (typeof LivereTower === 'function') { return; }
+
+                            j = d.createElement(s);
+                            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+                            j.async = true;
+
+                            e.parentNode.insertBefore(j, e);
+                        })(document, 'script');
+                    </script>
+                    <noscript> 为正常使用来必力评论功能请激活JavaScript</noscript>
+                </div>
+                <!-- City版安装代码已完成 -->
+                
+            </div>
+
+            <div class="hidden-xs col-sm-3 toc-col">
+                <div class="toc-wrap">
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#实现细节"><span class="toc-text">实现细节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#具体算法思路"><span class="toc-text">具体算法思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-text">总结</span></a></li></ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5 class="text-center">
+                        <a href="/tags/">FEATURED TAGS</a>
+                    </h5>
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#OpenCV"
+                           title="OpenCV">OpenCV</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+            </div>
+        </div>
+
+    </div>
+</article>
+
+
+
+
+
+
+
+<!-- Footer -->
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 text-center">
+                <br>
+                <ul class="list-inline text-center">
+                
+                
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/jeff-pu">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/SAMICKD8">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/JeffPu">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Jeff Pu 2017
+                    <br>
+                    <span id="busuanzi_container_site_pv" style="font-size: 12px;">PV: <span id="busuanzi_value_site_pv"></span> Times</span>
+                    <br>
+                    Theme by <a href="https://haojen.github.io/">Haojen Ma</a>
+                </p>
+
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/blog.js"></script>
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://JeffPu.github.io/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("//cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    var _baId = 'e2dc6e51d37d50d6074b2d396ca91ce7';
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?" + _baId;
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+<!-- swiftype -->
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+  (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+  e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install','null','2.0.0');
+</script>
+
+<script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<!--wechat title img-->
+<img class="wechat-title-img" src="http://ors2atorf.bkt.clouddn.com/avatar.jpg">
+</body>
+
+</html>
