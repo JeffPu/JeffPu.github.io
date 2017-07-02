@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="蒲翔宇在 Github 上的个人博客">
+    <meta name="keyword" content="null">
+    <meta name="theme-color" content="#600090">
+    <meta name="msapplication-navbutton-color" content="#600090">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#600090">
+    <meta name="baidu-site-verification" content="Jj34ErJJQW" />
+    <meta name="google-site-verification" content="RaXpouG18FsoO5n6_p2p4cyKXtnolXMCCl6JjSx4X38" />
+
+    <link rel="shortcut icon" href="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-person-128.png">
+    <link rel="alternate" type="application/atom+xml" title="Jeff Pu" href="/atom.xml">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
+    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.css">
+    <title>
+        
+        对Z轴倾斜的图像进行校正--基于OpenCV透视变换｜JeffPu&#39;s blog
+        
+    </title>
+
+    <link rel="canonical" href="http://JeffPu.github.io/2017/07/02/对Z轴倾斜的图像进行校正-基于OpenCV透视变换/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/blog-style.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+    <!-- baidu push -->
+    <script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+</head>
+
+<style>
+
+    header.intro-header {
+        background-image: url('http://ors2atorf.bkt.clouddn.com/post_header.jpg')
+    }
+</style>
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="" class="animated fadeIn">
+<!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top " id="nav-top" data-ispost = "true" data-istags="false
+" data-ishome = "false" >
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand animated pulse" href="/">
+                <span class="brand-logo">
+                    Jeff Pu
+                </span>
+                's Blog
+            </a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <!-- /.navbar-collapse -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+					
+                    
+                        
+							
+                        <li>
+                            <a href="/archives/">archives</a>
+                        </li>
+							
+						
+                    
+                        
+							
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+							
+						
+                    
+					
+					
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+//    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+<!-- Main Content -->
+
+<!--only post-->
+
+
+<img class="wechat-title-img" src="http://ors2atorf.bkt.clouddn.com/post_header.jpg">
+
+
+<style>
+    
+    header.intro-header {
+        background-image: url('http://ors2atorf.bkt.clouddn.com/post_header.jpg');
+    }
+
+    
+</style>
+
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 text-center">
+                <div class="post-heading">
+                    <h1>对Z轴倾斜的图像进行校正--基于OpenCV透视变换</h1>
+                    
+                    <span class="meta">
+                         作者 Xiangyu Pu
+                        <span>
+                          日期 2017-07-02
+                         </span>
+                    </span>
+                    <div class="tags text-center">
+                        
+                        <a class="tag" href="/tags/#OpenCV"
+                           title="OpenCV">OpenCV</a>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="post-title-haojen">
+        <span>
+            对Z轴倾斜的图像进行校正--基于OpenCV透视变换
+        </span>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+            <!-- Post Container -->
+            <div class="col-lg-8 col-lg-offset-1 col-sm-9 post-container">
+                <p>上一周利用包围轮廓和仿射变换解决了图像平面的倾斜校正，但对于Z轴上有倾斜的图像，我们需要另外的思路与算法，比如透视变换。</p>
+<h2 id="关于OpenCV的透视变换"><a href="#关于OpenCV的透视变换" class="headerlink" title="关于OpenCV的透视变换"></a>关于OpenCV的透视变换</h2><p>网上的资料有很多，比如这篇 <a href="http://blog.csdn.net/xiaowei_cqu/article/details/26471527" target="_blank" rel="external">透视变换 Perspective Transformation</a>，把倾斜的图像恢复成了原图。</p>
+<p>但这篇文章的代码有点儿不切实际，仿射变换的4个关键点是需要手动确定的，这违反了编程的本意。于是我们需要在以上的基础上对原有代码进行改进，让其能自动确定这4个关键点的坐标。</p>
+<h2 id="关于自动计算仿射变换顶点的算法实现"><a href="#关于自动计算仿射变换顶点的算法实现" class="headerlink" title="关于自动计算仿射变换顶点的算法实现"></a>关于自动计算仿射变换顶点的算法实现</h2><h3 id="边缘提取"><a href="#边缘提取" class="headerlink" title="边缘提取"></a>边缘提取</h3><p>首先需要对原图进行边缘检测， 为了适应不同的图像，将threshold设置为一个带初值的变量，并设置最多检测出的直线条数，迭代地增加threshold的值来减少每次检测出的直线 条数：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="keyword">while</span> (<span class="keyword">this</span>-&gt;lines.size() &gt;= maxLinesNum)</div><div class="line">    &#123;</div><div class="line">        <span class="keyword">this</span>-&gt;cannyThreshold += <span class="number">2</span>;</div><div class="line">        Canny(<span class="keyword">this</span>-&gt;srcImage, <span class="keyword">this</span>-&gt;midImage, <span class="keyword">this</span>-&gt;cannyThreshold, <span class="keyword">this</span>-&gt;cannyThreshold * factor);</div><div class="line">        threshold(<span class="keyword">this</span>-&gt;midImage, <span class="keyword">this</span>-&gt;midImage, <span class="number">128</span>, <span class="number">255</span>, THRESH_BINARY);</div><div class="line">        cvtColor(<span class="keyword">this</span>-&gt;midImage, <span class="keyword">this</span>-&gt;edgeDetect, CV_GRAY2RGB);</div><div class="line">        HoughLinesP(<span class="keyword">this</span>-&gt;midImage, <span class="keyword">this</span>-&gt;lines, <span class="number">1</span>, CV_PI / <span class="number">180</span>, <span class="number">50</span>, <span class="number">100</span>, <span class="number">100</span>);</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p>为了避免环境噪声的影响，这里加一个滤波器，用于过滤过于贴近图像边缘的平行直线：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">IsCloseToEdge</span></span></div><div class="line">&#123;</div><div class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">operator</span><span class="params">()</span><span class="params">(Vec4i line)</span></span></div><div class="line">    &#123;</div><div class="line">        <span class="keyword">return</span> <span class="built_in">abs</span>(line[<span class="number">0</span>] - line[<span class="number">2</span>]) &lt; <span class="number">10</span> || <span class="built_in">abs</span>(line[<span class="number">1</span>] - line[<span class="number">3</span>]) &lt; <span class="number">10</span>;</div><div class="line">    &#125;</div><div class="line">&#125;;</div><div class="line">lines.erase(remove_if(lines.begin(), lines.end(), IsCloseToEdge()), lines.end());</div></pre></td></tr></table></figure>
+<p>至此，左上、右上、左下、右下这四个顶点已经被包含在了紫色的线条之中，下一步的工作就是从这些紫色的线条中解析出这四个顶点。</p>
+<p>在解析这四个点之前，还需要对这些紫色的线条进行一次处理：将所有点从这些线段中剥离出来。剥离的方法很直观：由于每条线段包含了两个点，因此点的个数最多是线段数的两倍（考虑到有的线段共用了顶点），因此新建一个用于存储所有点的vector，将他的大小初始化为lines这个vector大小的两倍：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="built_in">vector</span>&lt;Point&gt; points(lines.size() * <span class="number">2</span>);</div></pre></td></tr></table></figure>
+<p>为了提高之后计算的效率，并且合并一些由于直线提取的误差所产生的同一个点分离的情况，再对这些已经剥离了的点进行一次过滤：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="built_in">vector</span>&lt;Point&gt; candidates(candidate);</div><div class="line"><span class="built_in">vector</span>&lt;Point&gt; filter(candidate);</div><div class="line"><span class="keyword">for</span> (<span class="keyword">auto</span> i = candidates.begin(); i !=candidates.end();)</div><div class="line"><span class="keyword">for</span> (<span class="keyword">auto</span> j = filter.begin(); j != filter.end(); ++j)</div><div class="line">&#123;</div><div class="line">      <span class="keyword">if</span>(<span class="built_in">abs</span>((i).x - (j).x) &lt; <span class="number">5</span> &amp;&amp; </div><div class="line">         <span class="built_in">abs</span>((i).y - (j).y) &lt; <span class="number">5</span> &amp;&amp;</div><div class="line">         <span class="built_in">abs</span>((i).x - (j).x) &gt; <span class="number">0</span> &amp;&amp; </div><div class="line">         <span class="built_in">abs</span>((i).y - (j).y) &gt; <span class="number">0</span></div><div class="line">        )</div><div class="line">               i= filter.erase(i);</div><div class="line">      <span class="keyword">else</span> </div><div class="line">            ++i;</div><div class="line">&#125;</div><div class="line"><span class="keyword">return</span> filter;</div></pre></td></tr></table></figure>
+<p>这次过滤是非常有必要进行的，由于直线提取的阈值不可能适用于各种情形下拍摄的照片，因此有些照片的直线提取结果中，某些看上去是一条线段，实际上是由两条甚至更多条线段合并而成，如果直接把他们剥离成点用于算法后面的计算的话，由于后面的计算时间复杂度是O(N^2)，盲目的计算会消耗非常多的时间，而这些消耗是没有必要的。这次过滤后，重合的点将被删除，而原本逻辑上是同一个点而计算后成为不同点的那些点将被合并为一个点。在经过这次过滤后，再对剩余点进行一次排序，排序的依据是这些点到（0,0）点的距离：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line">sort(points.begin(), points.end(), </div><div class="line">     [](<span class="keyword">const</span> Point&amp; lhs, <span class="keyword">const</span> Point&amp; rhs)</div><div class="line">     &#123;<span class="keyword">return</span> lhs.x + lhs.y &lt; rhs.x + rhs.y; &#125;</div><div class="line">    );</div></pre></td></tr></table></figure>
+<p>经过这次处理后，points中的所有点都是有序排列了。</p>
+<h3 id="计算关键点"><a href="#计算关键点" class="headerlink" title="计算关键点"></a>计算关键点</h3><p>具体思想是，将“右上”、“左下”定义为点簇而非具体的某个点。在除开左上和右下这两个点外的所有点中，经行两次过滤：第一次过滤可以选出右上的点簇，利用的是在剩余的点中，如果某个点的横坐标大于左上点的横坐标并且纵坐标小于右下点的纵坐标，那么将这个点归到“右上”这个点簇中，如果某个点的纵坐标大于左上点的纵坐标并且横坐标小于右下点的横坐标，那么将这个点归到“左下”这个点簇中。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="built_in">vector</span>&lt;Point&gt;rightTop(temp.size());</div><div class="line"><span class="built_in">vector</span>&lt;Point&gt;leftDown(temp.size());<span class="comment">//左下和右上有多个点可能符合</span></div><div class="line"><span class="keyword">for</span> (<span class="keyword">auto</span> &amp; i : temp)[<span class="number">2</span>]</div><div class="line"><span class="keyword">if</span> (i.x &gt; leftTop.x &amp;&amp; i.y &lt; rightDown.y)</div><div class="line">      rightTop.push_back(i);</div><div class="line"><span class="keyword">for</span> (<span class="keyword">auto</span> &amp; i : temp)</div><div class="line">     <span class="keyword">if</span> (i.y &gt; leftTop.y &amp;&amp; i.x &lt; rightDown.x)</div><div class="line">          leftDown.push_back(i);</div></pre></td></tr></table></figure>
+<p>经过这个步骤后，就将所有满足条件的点分别归到了“左下”和“右上”这两个点簇中。那么接下来，如何从这两个点簇中选出真正的左上点和右下点呢。这就要用到一个矩形中最长的线段是对角线这个性质了。即使原图由于拍摄原因可能已经产生了畸变，但是在“左下”和“右上”这两个点簇中，能构成最长线段的点仍然是真正的右上点和左下点。于是在“左下”和“右上”这两个点簇中从容器起始位置进行遍历，不断更新最长距离和此距离对应的两个容器中的元素位置，直到这两个位置到达两个容器的末尾，就停止更新。此时记录下的元素位置所对应的点，就是真正的左下点和右上点，如工程代码所示：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="keyword">int</span> maxDistance = (rightTop[<span class="number">0</span>].x - leftDown[<span class="number">0</span>].x) *(rightTop[<span class="number">0</span>].x - leftDown[<span class="number">0</span>].x) </div><div class="line">                 + (rightTop[<span class="number">0</span>].y - leftDown[<span class="number">0</span>].y) *(rightTop[<span class="number">0</span>].y - leftDown[<span class="number">0</span>].y);</div><div class="line">  <span class="keyword">for</span> (<span class="keyword">size_t</span> i = <span class="number">0</span>; i &lt; rightTop.size(); ++i)</div><div class="line">  <span class="keyword">for</span> (<span class="keyword">size_t</span> j = <span class="number">0</span>; j &lt; leftDown.size(); ++j)</div><div class="line">  <span class="keyword">if</span> (</div><div class="line">      (rightTop[i].x - leftDown[j].x) * (rightTop[i].x -leftDown[j].x) </div><div class="line">      + (rightTop[i].y - leftDown[j].y) * (rightTop[i].y -leftDown[j].y)</div><div class="line">      &gt; maxDistance</div><div class="line">      )</div><div class="line">   &#123;</div><div class="line">        maxDistance = (rightTop[i].x - leftDown[j].x) * (rightTop[i].x - leftDown[j].x) </div><div class="line">                   + (rightTop[i].y - leftDown[j].y) *(rightTop[i].y - leftDown[j].y);</div><div class="line">        rightTopFlag= i;</div><div class="line">        leftDownFlag= j;</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><ul>
+<li>头文件</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> __PPTRESTORE_H</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> __PPTRESTORE_H</span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cmath&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fstream&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;opencv2/core/core.hpp&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;opencv2/imgproc/imgproc.hpp&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;opencv2/highgui/highgui.hpp&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;opencv2/calib3d/calib3d.hpp&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;opencv2/ml/ml.hpp&gt;  </span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;memory&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> cv;</div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> WINDOW_NAME1 <span class="meta-string">"【原始图窗口】"</span>           </span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> WINDOW_NAME2 <span class="meta-string">"【经过Warp后的图像】"</span>        </span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> WINDOW_NAME3 <span class="meta-string">"【再经过增强后的图像】"</span>        </span></div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">IsCloseToEdge</span></span></div><div class="line">&#123;</div><div class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">operator</span><span class="params">()</span><span class="params">(Vec4i line)</span></span></div><div class="line">    &#123;</div><div class="line">        <span class="keyword">return</span> <span class="built_in">abs</span>(line[<span class="number">0</span>] - line[<span class="number">2</span>]) &lt; <span class="number">10</span> || <span class="built_in">abs</span>(line[<span class="number">1</span>] - line[<span class="number">3</span>]) &lt; <span class="number">10</span>;</div><div class="line">    &#125;</div><div class="line">&#125;;</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">CmpContoursSize</span>//轮廓大小排序</span></div><div class="line">&#123;</div><div class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">operator</span><span class="params">()</span><span class="params">(<span class="keyword">const</span> <span class="built_in">vector</span>&lt;Point&gt;&amp; lhs, <span class="keyword">const</span> <span class="built_in">vector</span>&lt;Point&gt;&amp; rhs)</span> <span class="keyword">const</span></span></div><div class="line">    &#123;</div><div class="line">        <span class="keyword">return</span> lhs.size() &gt; rhs.size();</div><div class="line">    &#125;</div><div class="line">&#125;;</div><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">CmpDistanceToZero</span>//各个点到原点距离</span></div><div class="line">&#123;</div><div class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">operator</span><span class="params">()</span><span class="params">(<span class="keyword">const</span> Point&amp; lhs, <span class="keyword">const</span> Point&amp; rhs)</span> <span class="keyword">const</span></span></div><div class="line">    &#123;</div><div class="line">        <span class="keyword">return</span> lhs.x + lhs.y &lt; rhs.x + rhs.y;</div><div class="line">    &#125;</div><div class="line">&#125;;</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">PPTRestore</span></span></div><div class="line">&#123;</div><div class="line"><span class="keyword">public</span>:</div><div class="line">    PPTRestore();</div><div class="line">    PPTRestore(<span class="keyword">const</span> PPTRestore&amp;);</div><div class="line">    PPTRestore(PPTRestore&amp;&amp;);</div><div class="line">    PPTRestore&amp; <span class="keyword">operator</span>=(PPTRestore other);</div><div class="line">    ~PPTRestore();</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">imageRestoreAndEnhance</span><span class="params">(<span class="keyword">const</span> <span class="built_in">string</span> name)</span></span>;<span class="comment">//图像还原和增强</span></div><div class="line"><span class="keyword">private</span>:</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">Ximpl</span>;</span></div><div class="line">    Ximpl* pImpl;</div><div class="line">&#125;;</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></div></pre></td></tr></table></figure>
+<ul>
+<li>源文件</li>
+</ul>
+<figure class="highlight"><table><tr><td class="code"><pre><div class="line">#include "PPTRestoreClassHead.h"</div><div class="line">#include &lt;numeric&gt;</div><div class="line">struct PPTRestore::Ximpl</div><div class="line">&#123;</div><div class="line">    enum imageStyle &#123; normal, leanToRight, leanToLeft &#125;;</div><div class="line">    int cannyThreshold;</div><div class="line">    Mat srcImage, dstImage;</div><div class="line">    Mat midImage, edgeDetect;</div><div class="line">    Mat afterEnhance;</div><div class="line">    vector&lt;Point&gt; resultPointsByEdge;</div><div class="line">    vector&lt;Point&gt; resultPointsByContours;</div><div class="line">    vector&lt;Vec4i&gt; lines;</div><div class="line"></div><div class="line">    vector&lt;Point&gt; axisSort(const vector&lt;Vec4i&gt;&amp; lines);</div><div class="line">    vector&lt;Point&gt; pointsFilter(const vector&lt;Point&gt;&amp; candidates);//对各线段起始点过滤</div><div class="line">    vector&lt;Point&gt; findCrossPoint(const vector&lt;Vec4i&gt;&amp; lines);   //根据直线提取确定矩形4个顶点</div><div class="line"></div><div class="line">    vector&lt;Point&gt; axisSort(const vector&lt;vector&lt;Point&gt;&gt;&amp; contours);</div><div class="line">    vector&lt;Point&gt; findCrossPoint(const vector&lt;vector&lt;Point&gt;&gt;&amp; contours);//根据轮廓提取4个顶点</div><div class="line"></div><div class="line">    void loadImage(const string&amp; name);//加载图像</div><div class="line">    void doEdgeDetect();//边缘提取</div><div class="line">    void doFindcontours();//轮廓提取</div><div class="line">    void doAffineTransform();//透视变换</div><div class="line">    void dstImageEnhance();//图强增强</div><div class="line">&#125;;</div><div class="line">PPTRestore::PPTRestore() : pImpl(new Ximpl())&#123;&#125;</div><div class="line">PPTRestore::PPTRestore(const PPTRestore&amp; other) : pImpl(new Ximpl(*other.pImpl))&#123;&#125;</div><div class="line">PPTRestore&amp; PPTRestore::operator=(PPTRestore other)</div><div class="line">&#123;</div><div class="line">    std::swap(other.pImpl, this-&gt;pImpl);</div><div class="line">    return *this;</div><div class="line">&#125;</div><div class="line">PPTRestore::~PPTRestore()</div><div class="line">&#123;</div><div class="line">    delete pImpl;</div><div class="line">    pImpl = nullptr;</div><div class="line">&#125;</div><div class="line"></div><div class="line">//通过(设置上限的)边缘提取得到四个顶点</div><div class="line">vector&lt;Point&gt; PPTRestore::Ximpl::pointsFilter(const vector&lt;Point&gt;&amp; candidate)</div><div class="line">&#123;</div><div class="line">    vector&lt;Point&gt; candidates(candidate);</div><div class="line">    vector&lt;Point&gt; filter(candidate);</div><div class="line">    for (auto i = candidates.begin(); i != candidates.end();)</div><div class="line">    for (auto j = filter.begin(); j != filter.end(); ++j)</div><div class="line">    &#123;</div><div class="line">        if (abs((*i).x - (*j).x) &lt; 5 &amp;&amp; abs((*i).y - (*j).y) &lt; 5 &amp;&amp; abs((*i).x - (*j).x) &gt; 0 &amp;&amp; abs((*i).y - (*j).y) &gt; 0)</div><div class="line">            i = filter.erase(i);</div><div class="line">        else</div><div class="line">            ++i;</div><div class="line">    &#125;</div><div class="line">    return filter;</div><div class="line">&#125;</div><div class="line">vector&lt;Point&gt; PPTRestore::Ximpl::axisSort(const vector&lt;Vec4i&gt;&amp; lines)</div><div class="line">&#123;</div><div class="line">    vector&lt;Point&gt; points(lines.size() * 2);//各个线段的起始点</div><div class="line">    for (size_t i = 0; i &lt; lines.size(); ++i)//将Vec4i转为point</div><div class="line">    &#123;</div><div class="line">        points[i * 2].x = lines[i][0];</div><div class="line">        points[i * 2].y = lines[i][1];</div><div class="line">        points[i * 2 + 1].x = lines[i][2];</div><div class="line">        points[i * 2 + 1].y = lines[i][3];</div><div class="line">    &#125;</div><div class="line">    points = this-&gt;pointsFilter(points);//对自己过滤一次</div><div class="line">    /*for (auto i : points)</div><div class="line">    cout &lt;&lt; i.x &lt;&lt; " " &lt;&lt; i.y &lt;&lt; endl;*/</div><div class="line">    sort(points.begin(), points.end(), CmpDistanceToZero());</div><div class="line">    return points;</div><div class="line">&#125;</div><div class="line">void PPTRestore::Ximpl::doEdgeDetect()</div><div class="line">&#123;</div><div class="line">    this-&gt;cannyThreshold = 80;</div><div class="line">    float factor = 2.5;</div><div class="line">    const int maxLinesNum = 10;//最多检测出的直线条数</div><div class="line">    Canny(this-&gt;srcImage, this-&gt;midImage, this-&gt;cannyThreshold, this-&gt;cannyThreshold * factor);</div><div class="line">    threshold(this-&gt;midImage, this-&gt;midImage, 128, 255, THRESH_BINARY);</div><div class="line">    cvtColor(this-&gt;midImage, this-&gt;edgeDetect, CV_GRAY2RGB);</div><div class="line">    HoughLinesP(this-&gt;midImage, this-&gt;lines, 1, CV_PI / 180, 50, 100, 100);</div><div class="line"></div><div class="line">    while (this-&gt;lines.size() &gt;= maxLinesNum)</div><div class="line">    &#123;</div><div class="line">        this-&gt;cannyThreshold += 2;</div><div class="line">        Canny(this-&gt;srcImage, this-&gt;midImage, this-&gt;cannyThreshold, this-&gt;cannyThreshold * factor);</div><div class="line">        threshold(this-&gt;midImage, this-&gt;midImage, 128, 255, THRESH_BINARY);</div><div class="line">        cvtColor(this-&gt;midImage, this-&gt;edgeDetect, CV_GRAY2RGB);</div><div class="line">        HoughLinesP(this-&gt;midImage, this-&gt;lines, 1, CV_PI / 180, 50, 100, 100);</div><div class="line">    &#125;</div><div class="line">    cout &lt;&lt; "cannyThreshold1:" &lt;&lt; this-&gt;cannyThreshold &lt;&lt; endl;</div><div class="line"></div><div class="line">    Canny(this-&gt;srcImage, this-&gt;midImage, this-&gt;cannyThreshold, this-&gt;cannyThreshold * factor);</div><div class="line">    threshold(this-&gt;midImage, this-&gt;midImage, 128, 255, THRESH_BINARY);</div><div class="line">    cvtColor(this-&gt;midImage, this-&gt;edgeDetect, CV_GRAY2RGB);</div><div class="line">    HoughLinesP(this-&gt;midImage, this-&gt;lines, 1, CV_PI / 180, 50, 100, 100);</div><div class="line"></div><div class="line">    const int imageRow = this-&gt;midImage.rows;</div><div class="line">    const int imageCol = this-&gt;midImage.cols;</div><div class="line"></div><div class="line"></div><div class="line">    lines.erase(remove_if(lines.begin(), lines.end(), IsCloseToEdge()), lines.end());</div><div class="line"></div><div class="line">    for (size_t i = 0; i &lt; this-&gt;lines.size(); i++)</div><div class="line">    &#123;</div><div class="line">        Vec4i l = this-&gt;lines[i];</div><div class="line">        line(this-&gt;edgeDetect, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(186, 88, 255), 1, CV_AA);</div><div class="line">    &#125;</div><div class="line"></div><div class="line"></div><div class="line">    this-&gt;findCrossPoint(this-&gt;lines);</div><div class="line">    /*for (size_t i = 0; i &lt; lines.size(); ++i)</div><div class="line">    cout &lt;&lt; lines[i] &lt;&lt; endl;*/</div><div class="line">    imshow("【边缘提取效果图】", this-&gt;edgeDetect);</div><div class="line">&#125;</div><div class="line">vector&lt;Point&gt; PPTRestore::Ximpl::findCrossPoint(const vector&lt;Vec4i&gt;&amp; lines)//通过直线找点</div><div class="line">&#123;</div><div class="line">    int rightTopFlag = 0;</div><div class="line">    int leftDownFlag = 0;</div><div class="line">    int diagLength = 0;//对角线长度</div><div class="line">    vector&lt;Point&gt; temp = this-&gt;axisSort(lines);</div><div class="line">    Point leftTop, rightDown;//左上和右下可以直接判断</div><div class="line">    vector&lt;Point&gt; rightTop(temp.size());</div><div class="line">    vector&lt;Point&gt; leftDown(temp.size());//左下和右上有多个点可能符合</div><div class="line">    //对PPT照片而言，一定是左上角离原点最近，右下角离原点最远</div><div class="line">    leftTop.x = temp[0].x;</div><div class="line">    leftTop.y = temp[0].y;</div><div class="line">    rightDown.x = temp[temp.size() - 1].x;</div><div class="line">    rightDown.y = temp[temp.size() - 1].y;</div><div class="line">    for (auto &amp; i : temp)</div><div class="line">    if (i.x &gt; leftTop.x &amp;&amp; i.y &lt; rightDown.y)</div><div class="line">        rightTop.push_back(i);</div><div class="line">    for (auto &amp; i : temp)</div><div class="line">    if (i.y &gt; leftTop.y &amp;&amp; i.x &lt; rightDown.x)</div><div class="line">        leftDown.push_back(i);</div><div class="line"></div><div class="line">    diagLength = (leftTop.x - rightDown.x) * (leftTop.x - rightDown.x) + (leftTop.y - rightDown.y) * (leftTop.y - rightDown.y);</div><div class="line">    rightTop.erase(remove(rightTop.begin(), rightTop.end(), Point(0, 0)), rightTop.end());</div><div class="line">    leftDown.erase(remove(leftDown.begin(), leftDown.end(), Point(0, 0)), leftDown.end());</div><div class="line">    //删除因图像畸变对计算两个距离最长点对的影响的点</div><div class="line">    for (auto i = rightTop.begin(); i != rightTop.end();)</div><div class="line">    &#123;</div><div class="line">        if (((*i).x - leftTop.x) * ((*i).x - leftTop.x) + ((*i).y - leftTop.y) * ((*i).y - leftTop.y) &lt; diagLength / 8)</div><div class="line">            i = rightTop.erase(i);</div><div class="line">        else</div><div class="line">            ++i;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    /*for (auto i : rightTop)</div><div class="line">    cout &lt;&lt; "右上还有：" &lt;&lt; i.x &lt;&lt; " " &lt;&lt; i.y &lt;&lt; endl;*/</div><div class="line"></div><div class="line">    int maxDistance = (rightTop[0].x - leftDown[0].x) * (rightTop[0].x - leftDown[0].x) + (rightTop[0].y - leftDown[0].y) * (rightTop[0].y - leftDown[0].y);</div><div class="line"></div><div class="line">    for (size_t i = 0; i &lt; rightTop.size(); ++i)</div><div class="line">    for (size_t j = 0; j &lt; leftDown.size(); ++j)</div><div class="line">    if ((rightTop[i].x - leftDown[j].x) * (rightTop[i].x - leftDown[j].x) + (rightTop[i].y - leftDown[j].y) * (rightTop[i].y - leftDown[j].y) &gt; maxDistance)</div><div class="line">    &#123;</div><div class="line">        maxDistance = (rightTop[i].x - leftDown[j].x) * (rightTop[i].x - leftDown[j].x) + (rightTop[i].y - leftDown[j].y) * (rightTop[i].y - leftDown[j].y);</div><div class="line">        rightTopFlag = i;</div><div class="line">        leftDownFlag = j;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    /*cout &lt;&lt; rightTop[rightTopFlag].x &lt;&lt; " " &lt;&lt; rightTop[rightTopFlag].y &lt;&lt; endl;</div><div class="line">    cout &lt;&lt; leftDown[leftDownFlag].x &lt;&lt; " " &lt;&lt; leftDown[leftDownFlag].y &lt;&lt; endl;*/</div><div class="line"></div><div class="line">    /*for (auto i : rightTop)</div><div class="line">    cout &lt;&lt; i.x &lt;&lt; " " &lt;&lt; i.y &lt;&lt; endl;*/</div><div class="line"></div><div class="line">    /*for (auto i : leftdown)</div><div class="line">    cout &lt;&lt; i.x &lt;&lt; " " &lt;&lt; i.y &lt;&lt; endl;*/</div><div class="line"></div><div class="line">    this-&gt;resultPointsByEdge.push_back(leftTop);</div><div class="line">    this-&gt;resultPointsByEdge.push_back(rightTop[rightTopFlag]);</div><div class="line">    this-&gt;resultPointsByEdge.push_back(leftDown[leftDownFlag]);</div><div class="line">    this-&gt;resultPointsByEdge.push_back(rightDown);</div><div class="line">    return this-&gt;resultPointsByEdge;</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">//通过轮廓提取得到四个顶点</div><div class="line">vector&lt;Point&gt; PPTRestore::Ximpl::axisSort(const vector&lt;vector&lt;Point&gt;&gt;&amp; contours)</div><div class="line">&#123;</div><div class="line">    vector&lt;Point&gt; points(contours.size() * contours[0].size());</div><div class="line">    for (auto i : contours)</div><div class="line">    for (auto j : i)</div><div class="line">        points.push_back(j);</div><div class="line">    points = this-&gt;pointsFilter(points);//对自己过滤一次</div><div class="line">    points.erase(remove(points.begin(), points.end(), Point(0, 0)), points.end());</div><div class="line">    sort(points.begin(), points.end(), CmpDistanceToZero());</div><div class="line">    return points;</div><div class="line">&#125;</div><div class="line">void PPTRestore::Ximpl::doFindcontours()</div><div class="line">&#123;</div><div class="line">    const float approachMaxThreshold = 20;</div><div class="line">    Mat result(this-&gt;midImage.size(), CV_8U, Scalar(0));</div><div class="line">    vector&lt;vector&lt;Point&gt;&gt; contours;</div><div class="line">    findContours(this-&gt;midImage, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);</div><div class="line">    sort(contours.begin(), contours.end(), CmpContoursSize());</div><div class="line">    for (size_t i = 0; i &lt; 5; ++i)//去除贴近图像边缘的轮廓</div><div class="line">    &#123;</div><div class="line">        size_t j = contours[i].size();</div><div class="line">        if (contours[i][j / 5].y - 0 &lt; approachMaxThreshold || this-&gt;midImage.cols - contours[i][j / 2].x &lt; approachMaxThreshold)</div><div class="line">            contours.erase(remove(contours.begin(), contours.end(), contours[i]), contours.end());</div><div class="line">    &#125;</div><div class="line">    vector&lt;vector&lt;Point&gt;&gt; biggestContours;</div><div class="line">    for (size_t i = 0; i &lt; 3; ++i)</div><div class="line">        biggestContours.push_back(contours[i]);</div><div class="line">    drawContours(result, biggestContours, -1, Scalar(255), 2);</div><div class="line">    imshow("轮廓提取", result);</div><div class="line">    this-&gt;findCrossPoint(biggestContours);</div><div class="line">&#125;</div><div class="line">vector&lt;Point&gt; PPTRestore::Ximpl::findCrossPoint(const vector&lt;vector&lt;Point&gt;&gt;&amp; contours)//通过轮廓找点</div><div class="line">&#123;</div><div class="line">    int imageState;//图片如何倾斜</div><div class="line">    vector&lt;Point&gt; temp = this-&gt;axisSort(contours);</div><div class="line">    Point leftTop, trueRightTop, trueLeftDown, rightDown;//左上和右下可以直接判断</div><div class="line">    vector&lt;Point&gt; rightTop(temp.size());</div><div class="line">    vector&lt;Point&gt; leftDown(temp.size());//左下和右上有多个点可能符合</div><div class="line">    //对PPT照片而言，一定是左上角离原点最近，右下角离原点最远</div><div class="line">    leftTop.x = temp[0].x;</div><div class="line">    leftTop.y = temp[0].y;</div><div class="line">    rightDown.x = temp[temp.size() - 1].x;</div><div class="line">    rightDown.y = temp[temp.size() - 1].y;</div><div class="line"></div><div class="line">    for (auto &amp; i : temp)</div><div class="line">    if (i.x &gt; leftTop.x &amp;&amp; i.y &lt; rightDown.y)</div><div class="line">        rightTop.push_back(i);</div><div class="line">    for (auto &amp; i : temp)</div><div class="line">    if (i.y &gt; leftTop.y &amp;&amp; i.x &lt; rightDown.x)</div><div class="line">        leftDown.push_back(i);</div><div class="line"></div><div class="line">    if (rightTop.end() == find_if(rightTop.begin(), rightTop.end(), [leftTop, rightTop](Point p)&#123;return p.y &lt; leftTop.y; &#125;))</div><div class="line">        imageState = imageStyle::leanToRight;//如果所有右上点的y值都 &gt; 左上点的y值 ，说明图像向右倾斜</div><div class="line">    else</div><div class="line">        imageState = imageStyle::leanToLeft;</div><div class="line"></div><div class="line">    if (imageState == imageStyle::leanToRight)//向右倾斜</div><div class="line">    &#123;</div><div class="line">        sort(rightTop.begin(), rightTop.end(), [rightTop](Point p1, Point p2)&#123;return p1.x &gt; p2.x; &#125;);//对所有右上点按X值排序，X最大的就是真正的右上点</div><div class="line">        rightTop.erase(remove(rightTop.begin(), rightTop.end(), Point(0, 0)), rightTop.end());</div><div class="line">        trueRightTop = rightTop[0];</div><div class="line">        sort(leftDown.begin(), leftDown.end(), [leftDown](Point p1, Point p2)&#123;return p1.x &lt; p2.x; &#125;);//对所有左下点按X值排序，X最小的就是真正的左下点</div><div class="line">        leftDown.erase(remove(leftDown.begin(), leftDown.end(), Point(0, 0)), leftDown.end());</div><div class="line">        trueLeftDown = leftDown[0];</div><div class="line">    &#125;</div><div class="line">    else //向左倾斜</div><div class="line">    &#123;</div><div class="line">        sort(rightTop.begin(), rightTop.end(), [rightTop](Point p1, Point p2)&#123;return p1.y &lt; p2.y; &#125;);//对所有右上点按Y值排序，Y最小的就是真正的右上点</div><div class="line">        rightTop.erase(remove(rightTop.begin(), rightTop.end(), Point(0, 0)), rightTop.end());</div><div class="line">        trueRightTop = rightTop[0];</div><div class="line">        sort(leftDown.begin(), leftDown.end(), [leftDown](Point p1, Point p2)&#123;return p1.y &gt; p2.y; &#125;);//对所有左下点按Y值排序，Y最大的就是真正的左下点</div><div class="line">        leftDown.erase(remove(leftDown.begin(), leftDown.end(), Point(0, 0)), leftDown.end());</div><div class="line">        trueLeftDown = leftDown[0];</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    this-&gt;resultPointsByContours.push_back(leftTop);</div><div class="line">    this-&gt;resultPointsByContours.push_back(trueRightTop);</div><div class="line">    this-&gt;resultPointsByContours.push_back(trueLeftDown);</div><div class="line">    this-&gt;resultPointsByContours.push_back(rightDown);</div><div class="line">    return this-&gt;resultPointsByContours;</div><div class="line">&#125;</div><div class="line"></div><div class="line">void PPTRestore::Ximpl::loadImage(const string&amp; name)</div><div class="line">&#123;</div><div class="line">    srcImage = imread(name, 1);</div><div class="line">    if (!srcImage.data)</div><div class="line">    &#123;</div><div class="line">        cout &lt;&lt; "读取图片错误，请确定目录下是否有imread函数指定的图片存在" &lt;&lt; endl;</div><div class="line">    &#125;</div><div class="line">    imshow(WINDOW_NAME1, this-&gt;srcImage);</div><div class="line">&#125;</div><div class="line">void PPTRestore::Ximpl::doAffineTransform()</div><div class="line">&#123;</div><div class="line">    this-&gt;doEdgeDetect();//仿射变换前先边缘、直线提取</div><div class="line">    //this-&gt;doFindcontours();//提取轮廓</div><div class="line">    Point2f _srcTriangle[4];</div><div class="line">    Point2f _dstTriangle[4];</div><div class="line">    vector&lt;Point2f&gt;srcTriangle(_srcTriangle, _srcTriangle + 4);</div><div class="line">    vector&lt;Point2f&gt;dstTriangle(_dstTriangle, _dstTriangle + 4);</div><div class="line"></div><div class="line">    const int leftTopX = (this-&gt;resultPointsByEdge[0].x + this-&gt;resultPointsByEdge[0].x) / 2;</div><div class="line">    const int leftTopY = (this-&gt;resultPointsByEdge[0].y + this-&gt;resultPointsByEdge[0].y) / 2;</div><div class="line">    const int rightTopX = (this-&gt;resultPointsByEdge[1].x + this-&gt;resultPointsByEdge[1].x) / 2;</div><div class="line">    const int rightTopY = (this-&gt;resultPointsByEdge[1].y + this-&gt;resultPointsByEdge[1].y) / 2;</div><div class="line">    const int leftDownX = (this-&gt;resultPointsByEdge[2].x + this-&gt;resultPointsByEdge[2].x) / 2;</div><div class="line">    const int leftDownY = (this-&gt;resultPointsByEdge[2].y + this-&gt;resultPointsByEdge[2].y) / 2;</div><div class="line">    const int rightDownX = (this-&gt;resultPointsByEdge[3].x + this-&gt;resultPointsByEdge[3].x) / 2;</div><div class="line">    const int rightDownY = (this-&gt;resultPointsByEdge[3].y + this-&gt;resultPointsByEdge[3].y) / 2;</div><div class="line"></div><div class="line">    cout &lt;&lt; leftTopX &lt;&lt; " " &lt;&lt; leftTopY &lt;&lt; endl;</div><div class="line">    cout &lt;&lt; rightTopX &lt;&lt; " " &lt;&lt; rightTopY &lt;&lt; endl;</div><div class="line">    cout &lt;&lt; leftDownX &lt;&lt; " " &lt;&lt; leftDownY &lt;&lt; endl;</div><div class="line">    cout &lt;&lt; rightDownX &lt;&lt; " " &lt;&lt; rightDownY &lt;&lt; endl;</div><div class="line"></div><div class="line"></div><div class="line">    int newWidth = 0;</div><div class="line">    int newHeight = 0;</div><div class="line"></div><div class="line">    newWidth = sqrt((leftTopX - rightTopX) * (leftTopX - rightTopX) + (leftTopY - rightTopY) * (leftTopY - rightTopY));</div><div class="line">    newHeight = sqrt((leftTopX - leftDownX) * (leftTopX - leftDownX) + (leftTopY - leftDownY) * (leftTopY - leftDownY));</div><div class="line"></div><div class="line">    this-&gt;dstImage = Mat::zeros(newHeight, newWidth, this-&gt;srcImage.type());</div><div class="line"></div><div class="line">    srcTriangle[0] = Point2f(leftTopX, leftTopY);</div><div class="line">    srcTriangle[1] = Point2f(rightTopX, rightTopY);</div><div class="line">    srcTriangle[2] = Point2f(leftDownX, leftDownY);</div><div class="line">    srcTriangle[3] = Point2f(rightDownX, rightDownY);</div><div class="line"></div><div class="line">    dstTriangle[0] = Point2f(0, 0);</div><div class="line">    dstTriangle[1] = Point2f(newWidth, 0);</div><div class="line">    dstTriangle[2] = Point2f(0, newHeight);</div><div class="line">    dstTriangle[3] = Point2f(newWidth, newHeight);</div><div class="line"></div><div class="line"></div><div class="line">    Mat m1 = Mat(srcTriangle);</div><div class="line">    Mat m2 = Mat(dstTriangle);</div><div class="line">    Mat status;</div><div class="line">    Mat h = findHomography(m1, m2, status, 0, 3);</div><div class="line">    perspectiveTransform(srcTriangle, dstTriangle, h);</div><div class="line">    warpPerspective(this-&gt;srcImage, this-&gt;dstImage, h, this-&gt;dstImage.size());</div><div class="line">    imshow(WINDOW_NAME2, this-&gt;dstImage);</div><div class="line">&#125;</div><div class="line">void PPTRestore::Ximpl::dstImageEnhance()</div><div class="line">&#123;</div><div class="line">    Mat kernel = (Mat_&lt;float&gt;(3, 3) &lt;&lt; 0, -1, 0, -1, 5, -1, 0, -1, 0);</div><div class="line">    //Mat kernel = (Mat_&lt;float&gt;(5, 5) &lt;&lt; 0, -1, 0, -1,0,-1,0,-1,0,-1,0,-1,14,-1,0, -1, 0, -1, 0,-1,0,-1,0,-1,0);</div><div class="line">    /*Mat kernel(3, 3, CV_32F, Scalar(-1)); </div><div class="line">    kernel.at&lt;float&gt;(1, 1) =9;*/</div><div class="line">    //filter2D(this-&gt;dstImage, this-&gt;afterEnhance, this-&gt;dstImage.depth(), kernel);</div><div class="line">    filter2D(this-&gt;srcImage, this-&gt;afterEnhance, this-&gt;srcImage.depth(), kernel);</div><div class="line">    //imshow(WINDOW_NAME3, this-&gt;afterEnhance);</div><div class="line">    imwrite("result.jpg", afterEnhance);</div><div class="line">&#125;</div><div class="line">void PPTRestore::imageRestoreAndEnhance(const string name)</div><div class="line">&#123;</div><div class="line">    //执行顺序：加载原图、修正、增强</div><div class="line">    this-&gt;pImpl-&gt;loadImage(name);</div><div class="line">    this-&gt;pImpl-&gt;doAffineTransform();</div><div class="line">    this-&gt;pImpl-&gt;dstImageEnhance();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<ul>
+<li>源文件</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"PPTRestoreClassHead.h"</span></span></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">const</span> <span class="built_in">string</span> testName = <span class="string">"ppt.jpg"</span>;</div><div class="line">    PPTRestore ppt;</div><div class="line">    ppt.imageRestoreAndEnhance(testName);</div><div class="line">    waitKey();</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><ul>
+<li>原图像</li>
+</ul>
+<p><img src="http://ors2atorf.bkt.clouddn.com/correction1.png" alt="orinal_image"></p>
+<ul>
+<li>边缘检测</li>
+</ul>
+<p><img src="http://ors2atorf.bkt.clouddn.com/correction2.png" alt="threshold_image"></p>
+<ul>
+<li>校正图像</li>
+</ul>
+<p><img src="http://ors2atorf.bkt.clouddn.com/correction3.png" alt="result_image"></p>
+
+                <hr>
+                
+
+                <ul class="pager">
+                    
+                    
+                    <li class="next">
+                        <a href="/2017/06/25/利用包围轮廓和仿射变换进行图像倾斜校正/" data-toggle="tooltip" data-placement="top"
+                           title="利用包围轮廓和仿射变换进行图像倾斜校正">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
+
+                
+
+
+                <!--加入新的评论系统-->
+                
+                <!-- 来必力City版安装代码 -->
+                <div id="lv-container" data-id="city" data-uid="MTAyMC8yOTE3NS81NzQy">
+                    <script type="text/javascript">
+                        (function(d, s) {
+                            var j, e = d.getElementsByTagName(s)[0];
+
+                            if (typeof LivereTower === 'function') { return; }
+
+                            j = d.createElement(s);
+                            j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+                            j.async = true;
+
+                            e.parentNode.insertBefore(j, e);
+                        })(document, 'script');
+                    </script>
+                    <noscript> 为正常使用来必力评论功能请激活JavaScript</noscript>
+                </div>
+                <!-- City版安装代码已完成 -->
+                
+            </div>
+
+            <div class="hidden-xs col-sm-3 toc-col">
+                <div class="toc-wrap">
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#关于OpenCV的透视变换"><span class="toc-text">关于OpenCV的透视变换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于自动计算仿射变换顶点的算法实现"><span class="toc-text">关于自动计算仿射变换顶点的算法实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#边缘提取"><span class="toc-text">边缘提取</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#计算关键点"><span class="toc-text">计算关键点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#代码"><span class="toc-text">代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#效果"><span class="toc-text">效果</span></a></li></ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5 class="text-center">
+                        <a href="/tags/">FEATURED TAGS</a>
+                    </h5>
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#OpenCV"
+                           title="OpenCV">OpenCV</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+            </div>
+        </div>
+
+    </div>
+</article>
+
+
+
+
+
+
+
+<!-- Footer -->
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 text-center">
+                <br>
+                <ul class="list-inline text-center">
+                
+                
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/jeff-pu">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/SAMICKD8">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/JeffPu">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Jeff Pu 2017
+                    <br>
+                    <span id="busuanzi_container_site_pv" style="font-size: 12px;">PV: <span id="busuanzi_value_site_pv"></span> Times</span>
+                    <br>
+                    Theme by <a href="https://haojen.github.io/">Haojen Ma</a>
+                </p>
+
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/blog.js"></script>
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://JeffPu.github.io/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("//cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-101674175-1';
+    var _gaDomain = 'auto';
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    var _baId = 'e2dc6e51d37d50d6074b2d396ca91ce7';
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?" + _baId;
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+<!-- swiftype -->
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+  (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+  e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install','null','2.0.0');
+</script>
+
+<script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<!--wechat title img-->
+<img class="wechat-title-img" src="http://ors2atorf.bkt.clouddn.com/avatar.jpg">
+</body>
+
+</html>
