@@ -21,11 +21,11 @@
     <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.css">
     <title>
         
-        模板匹配技术选择及实现细节｜JeffPu&#39;s blog
+        深度学习入门总结｜JeffPu&#39;s blog
         
     </title>
 
-    <link rel="canonical" href="http://JeffPu.github.io/2017/06/20/模板匹配技术选择及实现细节/">
+    <link rel="canonical" href="http://JeffPu.github.io/2017/07/05/深度学习入门总结/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -153,13 +153,13 @@
 <!--only post-->
 
 
-<img class="wechat-title-img" src="http://ors2atorf.bkt.clouddn.com/match3.png">
+<img class="wechat-title-img" src="http://ors2atorf.bkt.clouddn.com/post_header.jpg">
 
 
 <style>
     
     header.intro-header {
-        background-image: url('http://ors2atorf.bkt.clouddn.com/match3.png');
+        background-image: url('http://ors2atorf.bkt.clouddn.com/post_header.jpg');
     }
 
     
@@ -170,18 +170,18 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 text-center">
                 <div class="post-heading">
-                    <h1>模板匹配技术选择及实现细节</h1>
+                    <h1>深度学习入门总结</h1>
                     
                     <span class="meta">
                          作者 Xiangyu Pu
                         <span>
-                          日期 2017-06-20
+                          日期 2017-07-05
                          </span>
                     </span>
                     <div class="tags text-center">
                         
-                        <a class="tag" href="/tags/#OpenCV"
-                           title="OpenCV">OpenCV</a>
+                        <a class="tag" href="/tags/#Deep Learning"
+                           title="Deep Learning">Deep Learning</a>
                         
                     </div>
                 </div>
@@ -190,7 +190,7 @@
     </div>
     <div class="post-title-haojen">
         <span>
-            模板匹配技术选择及实现细节
+            深度学习入门总结
         </span>
     </div>
 </header>
@@ -201,63 +201,40 @@
         <div class="row">
             <!-- Post Container -->
             <div class="col-lg-8 col-lg-offset-1 col-sm-9 post-container">
-                <h2 id="实现技术的选择"><a href="#实现技术的选择" class="headerlink" title="实现技术的选择"></a>实现技术的选择</h2><p>在自动化生产需要识别生产线上的目标以进行进一步的检测，这时就需要用到模板匹配。模板匹配是通过OpenCV里的<strong>matchTemple</strong>函数实现的。模板匹配是一项在一幅图像中寻找与另一幅模板图像最匹配(相似)部分的技术。模板匹配是通过在输入图像上滑动图像块(模板)同时比对相似度, 来对模板和输入图像进行匹配的一种方法。这种方法不仅计算量大，且若图像有旋转的话，由于旋转角度未知，需要把图像旋转一定角度取像素和原图标对比，要将360/2^n的倍数都要取到，这样计算量更大，效率更低。所以matchTemple并不适用于角度旋转和尺寸变换的场景。</p>
-<p>考虑到工业上目标物轮廓清晰，可以考虑使用轮廓来匹配，<strong>matchShapes</strong>函数比较轮廓相似度是基于Hu矩来计算的，而Hu矩是归一化中心矩的线性组合，如平移、缩放、旋转都影响较小。</p>
-<h2 id="实现细节"><a href="#实现细节" class="headerlink" title="实现细节"></a>实现细节</h2><p>代码如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"opencv2/opencv.hpp"</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> cv;</div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></div><div class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></div><div class="line">&#123;</div><div class="line">    <span class="comment">//查找模版图像的轮廓</span></div><div class="line">    Mat templateImg = imread(<span class="string">"test2.jpg"</span>, CV_LOAD_IMAGE_COLOR);</div><div class="line">	Mat copyImg1 = templateImg.clone();</div><div class="line">	cvtColor(templateImg, templateImg, CV_BGR2GRAY);</div><div class="line">	threshold(templateImg, templateImg, <span class="number">100</span>, <span class="number">255</span>, CV_THRESH_BINARY);</div><div class="line">	imshow(<span class="string">"thresh1"</span>, templateImg);</div><div class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;Point&gt;&gt; contours1;</div><div class="line">	findContours(templateImg, contours1, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);<span class="comment">//最外层轮廓</span></div><div class="line">	drawContours(copyImg1, contours1, <span class="number">-1</span>, Scalar(<span class="number">0</span>, <span class="number">255</span>, <span class="number">0</span>), <span class="number">2</span>, <span class="number">8</span>);</div><div class="line">	<span class="comment">//查找待测试图像的轮廓</span></div><div class="line">	Mat testImg = imread(<span class="string">"test1.jpg"</span>, CV_LOAD_IMAGE_COLOR);</div><div class="line">	Mat copyImg2 = testImg.clone();</div><div class="line">	cvtColor(testImg, testImg, CV_BGR2GRAY);</div><div class="line">	threshold(testImg, testImg, <span class="number">100</span>, <span class="number">255</span>, CV_THRESH_BINARY);</div><div class="line">	imshow(<span class="string">"thresh2"</span>, testImg);</div><div class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;Point&gt;&gt; contours2;</div><div class="line">	findContours(testImg, contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);<span class="comment">//最外层轮廓</span></div><div class="line">																		</div><div class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; contours2.size(); i++)<span class="comment">//遍历待测试图像的轮廓</span></div><div class="line">	&#123;</div><div class="line">		<span class="comment">//返回此轮廓与模版轮廓之间的相似度,a0越小越相似</span></div><div class="line">		<span class="keyword">double</span> a0 = matchShapes(contours1[<span class="number">0</span>], contours2[i], CV_CONTOURS_MATCH_I1, <span class="number">0</span>);</div><div class="line">		<span class="built_in">cout</span> &lt;&lt; <span class="string">"模版轮廓与待测试图像轮廓"</span> &lt;&lt; i &lt;&lt; <span class="string">"的相似度:"</span> &lt;&lt; a0 &lt;&lt; <span class="built_in">endl</span>;<span class="comment">//输出两个轮廓间的相似度</span></div><div class="line">		<span class="keyword">if</span> (a0&lt;<span class="number">0.08</span>)<span class="comment">//如果此轮廓与模版轮廓的相似度小于0.08</span></div><div class="line">		&#123;</div><div class="line">			drawContours(copyImg2, contours2, i, Scalar(<span class="number">0</span>, <span class="number">255</span>, <span class="number">0</span>), <span class="number">2</span>, <span class="number">8</span>);<span class="comment">//则在待测试图像上画出此轮廓</span></div><div class="line">		&#125;</div><div class="line">		imshow(<span class="string">"copyImg2"</span>, copyImg2);</div><div class="line">		<span class="keyword">if</span> (waitKey(<span class="number">0</span>) == <span class="number">27</span>)<span class="comment">//等待按键进行下一个轮廓，ESC则退出</span></div><div class="line">		&#123;</div><div class="line">			<span class="built_in">cout</span> &lt;&lt; <span class="string">"ESC退出"</span> &lt;&lt; <span class="built_in">endl</span>;</div><div class="line">			<span class="keyword">break</span>;</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">	waitKey(<span class="number">0</span>);</div><div class="line">	<span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<h2 id="测试结果"><a href="#测试结果" class="headerlink" title="测试结果"></a>测试结果</h2><ul>
-<li>原图像：</li>
-</ul>
-<p><img src="http://ors2atorf.bkt.clouddn.com/match1.png" alt="original_image"></p>
-<ul>
-<li>测试图像：</li>
-</ul>
-<p><img src="http://ors2atorf.bkt.clouddn.com/match2.png" alt="test_image"></p>
-<ul>
-<li>输出图像：</li>
-</ul>
-<p><img src="http://ors2atorf.bkt.clouddn.com/match3.png" alt="output_image"></p>
-<ul>
-<li>输出结果：</li>
-</ul>
-<p><img src="http://ors2atorf.bkt.clouddn.com/match4.png" alt="output"></p>
-<h2 id="下一步工作"><a href="#下一步工作" class="headerlink" title="下一步工作"></a>下一步工作</h2><p>1.进一步研究模板匹配的所有方法并比较</p>
-<ul>
-<li><p>运行效率：时间</p>
-</li>
-<li><p>匹配的准确度对比</p>
-</li>
-<li><p>方法使用范围</p>
-</li>
-<li><p>支撑该方法的论文—从学术引擎和文章中搜索</p>
-</li>
-</ul>
-<p>2.方法的改进</p>
-<ul>
-<li><p>对已有的库函数的参数进行调整，同时证明自己调整参数之后，效果优于原先的函数参数</p>
-</li>
-<li><p>增加各种数据结构，比如堆栈，来加快代码的运行效率</p>
-</li>
-</ul>
-<h2 id="相关文档推荐"><a href="#相关文档推荐" class="headerlink" title="相关文档推荐"></a>相关文档推荐</h2><ul>
-<li><p><a href="http://yanghespace.com/2015/08/09/%E5%9F%BA%E4%BA%8ENCC%E7%9A%84%E6%A8%A1%E6%9D%BF%E5%8C%B9%E9%85%8D%E4%BB%8B%E7%BB%8D%E5%8F%8A%E5%AE%9E%E7%8E%B0%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82/" target="_blank" rel="external">基于NCC的模板匹配介绍及实现技术细节</a></p>
-</li>
-<li><p><a href="http://www.opencv.org.cn/opencvdoc/2.3.2/html/doc/tutorials/imgproc/histograms/template_matching/template_matching.html" target="_blank" rel="external">模板匹配—OpenCV官方文档</a></p>
-</li>
-<li><p><a href="https://arxiv.org/abs/1610.07231v1" target="_blank" rel="external">Template Matching Advances and Applications in Image Analysis</a></p>
-</li>
-</ul>
+                <p>传统的模式识别算法有着很大的局限性，就拿人脸识别来说，传统的人脸识别算法主要有基于人脸特征点的识别算法（Feature-based recognition algorithms）、基于整幅人脸图像的识别算法（Appearance-based recognition algorithms）、基于模板的识别算法（Template-based recognition algorithms）等，这些算法受环境光照，姿态，遮挡的影响较大，从目前的论文来看，人们越来越多地利用神经网络进行识别的算法（Recognition algorithms using neural network），识别的准确性也有很大的提高。这里就不得不提到深度学习。</p>
+<h2 id="人工智能、机器学习、深度学习之间的关系"><a href="#人工智能、机器学习、深度学习之间的关系" class="headerlink" title="人工智能、机器学习、深度学习之间的关系"></a>人工智能、机器学习、深度学习之间的关系</h2><p>如下图，人工智能是最早出现的，也是最大、最外侧的同心圆；其次是机器学习，稍晚一点；最内侧，是深度学习，当今人工智能大爆炸的核心驱动。</p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/DLDL_history.png" alt="history"></p>
+<p>简单来说，机器学习是人工智能的子集，而深度学习又是机器学习的子集。而深度学习造成了前所未有的巨大的影响。</p>
+<h2 id="机器学习——-一种实现人工智能的方法"><a href="#机器学习——-一种实现人工智能的方法" class="headerlink" title="机器学习—— 一种实现人工智能的方法"></a>机器学习—— 一种实现人工智能的方法</h2><p><strong>机器学习最基本的做法，是使用算法来解析数据、从中学习，然后对真实世界中的事件做出决策和预测。</strong>与传统的为解决特定任务、硬编码的软件程序不同，机器学习是用大量的数据来“训练”，通过各种算法从数据中学习如何完成任务。</p>
+<p>可以这么说，<strong>Machine Learning ≈ Looking for a Function</strong>，架构可以简化成下图：</p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/DLDL_Framework.png" alt="framework"></p>
+<h2 id="深度学习——一种实现机器学习的技术"><a href="#深度学习——一种实现机器学习的技术" class="headerlink" title="深度学习——一种实现机器学习的技术"></a>深度学习——一种实现机器学习的技术</h2><p>所谓深度学习，就是具有很多个隐层的神经网络。主要分为输入层、隐层、输出层。</p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/DLDL_Network.png" alt="network"></p>
+<p>简单地来说，深度学习是一个不断磨合训练的过程，刚开始定义一个标准参数，然后不断地修正，得出每个节点间的权重。这个时候我们就需要训练集和测试集，训练集就是带有正确标签的图片，而测试集就是用来验证模型的准确度。从上图可知，从左往右算起来容易，那反过来呢？这时我们需要反向传播法（BP算法）。</p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/DLDL_BP.jpg" alt="BP"></p>
+<p>BP算法建立在梯度下降法的基础上，它的学习过程由正向传播过程和反向传播过程组成。在正向传播过程中，输入信息通过输入层经隐含层，逐层处理并传向输出层。如果在输出层得不到期望的输出值，则取输出与期望的误差的平方和作为目标函数，转入反向传播，逐层求出目标函数对各神经元权值的偏导数，构成目标函数对权值向量的梯量，作为修改权值的依据，网络的学习在权值修改过程中完成。误差达到所期望值时，网络学习结束。</p>
+<p>这里面需要注意是为了让整个网络具有非线性特征，我们在计算权重的时候会加一个bias，即激活函数(<a href="https://mp.weixin.qq.com/s?__biz=MzI1NTE4NTUwOQ==&amp;mid=2650325236&amp;idx=1&amp;sn=7bd8510d59ddc14e5d4036f2acaeaf8d&amp;mpshare=1&amp;scene=1&amp;srcid=1214qIBJrRhevScKXQQuqas4&amp;pass_ticket=w2yCF%2F3Z2KTqyWW%2FUwkvnidRV3HF9ym5iEfJ%2BZ1dMObpcYUW3hQymA4BpY9W3gn4#rd]" target="_blank" rel="external">深度学习中的激活函数导引</a>)，激活函数是神经网络强大的基础，好的激活函数（根据任务来选择）还可以加速训练：</p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/DLDL_sigmoid.png" alt="sigmoid"></p>
+<p> 深度网络的实现基于逐层贪心训练算法，而随着模型的深度逐渐增加，会产生梯度消失或梯度爆炸的问题，梯度爆炸一般采用阈值截断的方法解决，而梯度消失不易解决；网络越深，这些问题越严重，这也是深度学习的核心问题，出现了一系列的技术及衍生模型。</p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/DLDL_modern.png" alt="mordern"></p>
+<p> 总结了深度学习中的基本模型并再次解释部分相关的技术概念(<a href="https://www.zhihu.com/question/26006703" target="_blank" rel="external">Deeper的回答</a>)：</p>
+<p><img src="http://ors2atorf.bkt.clouddn.com/DLDL_summarize.png" alt="summarize"></p>
+<h2 id="深度学习开源平台TensorFlow"><a href="#深度学习开源平台TensorFlow" class="headerlink" title="深度学习开源平台TensorFlow"></a>深度学习开源平台TensorFlow</h2><p>TensorFlow是一个采用数据流图（data flow graphs），用于数值计算的开源软件库。节点（Nodes）在图中表示数学操作，图中的线（edges）则表示在节点间相互联系的多维数据数组，即张量（tensor）。它灵活的架构让你可以在多种平台上展开计算，例如台式计算机中的一个或多个CPU（或GPU），服务器，移动设备等等。</p>
+<p>TensorFlow支持CNN、RNN和LSTM算法，这都是目前在Image，Speech和NLP最流行的深度神经网络模型。具体文档可参考：<a href="http://www.tensorfly.cn/" target="_blank" rel="external">TensorFlow中文社区</a>，这也是下一步学习的工具。</p>
+<h2 id="相关学习资料推荐"><a href="#相关学习资料推荐" class="headerlink" title="相关学习资料推荐"></a>相关学习资料推荐</h2><p><a href="https://www.coursera.org/learn/hipython" target="_blank" rel="external">coursera – 用 Python 玩转数据</a></p>
+<p><a href="http://speech.ee.ntu.edu.tw/~tlkagk/courses_ML17.html" target="_blank" rel="external">机器学习 – 李宏毅教授主页</a></p>
+<p><a href="https://www.bilibili.com/video/av9770302/" target="_blank" rel="external">李宏毅深度学习视频</a></p>
 
                 <hr>
                 
 
                 <ul class="pager">
                     
-                    <li class="previous">
-                        <a href="/2017/06/25/利用包围轮廓和仿射变换进行图像倾斜校正/" data-toggle="tooltip" data-placement="top"
-                           title="利用包围轮廓和仿射变换进行图像倾斜校正">&larr; Previous Post</a>
-                    </li>
                     
+                    <li class="next">
+                        <a href="/2017/07/02/对Z轴倾斜的图像进行校正-基于OpenCV透视变换/" data-toggle="tooltip" data-placement="top"
+                           title="对Z轴倾斜的图像进行校正--基于OpenCV透视变换">Next Post &rarr;</a>
+                    </li>
                     
                 </ul>
 
@@ -291,7 +268,7 @@
 
             <div class="hidden-xs col-sm-3 toc-col">
                 <div class="toc-wrap">
-                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#实现技术的选择"><span class="toc-text">实现技术的选择</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#实现细节"><span class="toc-text">实现细节</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#测试结果"><span class="toc-text">测试结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#下一步工作"><span class="toc-text">下一步工作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#相关文档推荐"><span class="toc-text">相关文档推荐</span></a></li></ol>
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#人工智能、机器学习、深度学习之间的关系"><span class="toc-text">人工智能、机器学习、深度学习之间的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#机器学习——-一种实现人工智能的方法"><span class="toc-text">机器学习—— 一种实现人工智能的方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#深度学习——一种实现机器学习的技术"><span class="toc-text">深度学习——一种实现机器学习的技术</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#深度学习开源平台TensorFlow"><span class="toc-text">深度学习开源平台TensorFlow</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#相关学习资料推荐"><span class="toc-text">相关学习资料推荐</span></a></li></ol>
                 </div>
             </div>
         </div>
@@ -313,8 +290,8 @@
                     </h5>
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#OpenCV"
-                           title="OpenCV">OpenCV</a>
+                        <a class="tag" href="/tags/#Deep Learning"
+                           title="Deep Learning">Deep Learning</a>
                         
                     </div>
                 </section>
